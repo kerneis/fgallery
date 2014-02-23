@@ -268,6 +268,7 @@ function onMainReady()
 
   // setup header
   var dsc = [];
+  dsc.push("<a href=\"..\" title=\"Back to parent directory\">⬉</a>");
   if(imgs.data[eidx].file)
   {
     var img = imgs.data[eidx].file[0];
