@@ -24,7 +24,7 @@ use File::Path qw{make_path remove_tree};
 use File::Find qw{find};
 use JSON qw{encode_json};
 use Time::Piece;
-use List::Util qw{first};
+use List::MoreUtils qw{any};
 
 # defaults
 my $mode = 0644;
@@ -328,7 +328,7 @@ find(
     return if(!-f $file);
     my (undef, undef, $suffix) = fileparse($file, qr/\.[^.]*$/);
     $suffix = lc(substr($suffix, 1));
-    if(first { $_ eq $suffix } @exts) {
+    if(any { $_ eq $suffix } @exts) {
       push(@files, $file);
     }
   }
