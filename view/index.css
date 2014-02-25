@@ -63,11 +63,17 @@ img
 }
 
 /* Main image */
-#gallery #content img.current
+#gallery #content img.current,
+#gallery #content video.current
 {
   box-shadow: 0 0 2.5rem rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 0 0 2.5rem rgba(0, 0, 0, 0.5);
   -webkit-box-shadow: 0 0 2.5rem rgba(0, 0, 0, 0.5);
+}
+
+#gallery #content video
+{
+  z-index: 1;
 }
 
 /* Header */
