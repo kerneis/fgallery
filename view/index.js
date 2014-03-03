@@ -158,11 +158,17 @@ function onLayoutChanged(layout, sr)
     // border styles
     var classes = ['cut-left', 'cut-right', 'cut-top', 'cut-bottom'];
     classes.each(function(c) { x.ethumb.removeClass(c); });
-
+    if(x.video)
+    {
+      x.ethumb.addClass('movie');
+    }
+    else
+    {
     if(-(cx - offset[0]) > size[0] * cutrt) x.ethumb.addClass('cut-left');
     if((cx - offset[0] + size[0] - maxw) > size[0] * cutrt) x.ethumb.addClass('cut-right');
     if(-(cy - offset[1]) > size[1] * cutrt) x.ethumb.addClass('cut-top');
     if((cy - offset[1] + size[1] - maxh) > size[1] * cutrt) x.ethumb.addClass('cut-bottom');
+    }
   });
 
   // resize thumbnail list
