@@ -290,6 +290,15 @@ function onMainReady()
   ehdr.set('html', dsc.join(' '));
   ehdr.setStyle('display', (dsc.length? 'block': 'none'));
 
+  // Avoid overlapping left/right arrows with video controls
+  if(imgs.data[eidx].video) {
+    eleft.addClass('minimal');
+    eright.addClass('minimal');
+  } else {
+    eleft.removeClass('minimal');
+    eright.removeClass('minimal');
+  }
+
   // complete thumbnails
   var d = duration;
   if(first !== false)

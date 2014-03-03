@@ -71,11 +71,6 @@ img
   -webkit-box-shadow: 0 0 2.5rem rgba(0, 0, 0, 0.5);
 }
 
-#gallery #content video
-{
-  z-index: 1;
-}
-
 /* Header */
 #gallery #content #header
 {
@@ -148,6 +143,20 @@ img
   right: 0;
   opacity: 0.3;
   filter: alpha(opacity=30);
+}
+
+#gallery #content #left.minimal,
+#gallery #content #right.minimal
+{
+  top: 50%;
+  bottom:auto;
+  margin-top: -23px; /* (arrow height)/2 = 46px/2 */
+}
+
+#gallery #content #left.minimal img,
+#gallery #content #right.minimal img
+{
+  margin: 0;
 }
 
 #gallery #content #left div:hover,
