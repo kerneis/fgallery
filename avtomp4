@@ -1,0 +1,115 @@
+#!/bin/sh
+# defaults
+verbose=0
+stream=0
+npass=2
+rate=1597		# mp/kbps total data rate (kb)
+rate_cap=1472		# total target bitrate cap (kb)
+arate_cap=128		# audio rate bitrate cap (maximum)
+arate_rt=5		# proportional audio bitrate (percent)
+vmax_width=1280		# video maximum width
+vmax_height=1024	# video maximum height
+vmax_fps=30		# video maximum fps
+avconv=ffmpeg
+
+# parse arguments
+while getopts 1svr:w:f:o:m: optname
+do
+  case $optname in
+  1)	npass=1 ;;
+  s)	stream=1 ;;
+  v)	verbose=1 ;;
+  r)	rate="${OPTARG%[kK]}" ;;
+  m)	rate_cap="${OPTARG%[kK]}" ;;
+  w)	vmax_width="$OPTARG" ;;
+  h)	vmax_height="$OPTARG" ;;
+  f)	vmax_fps="$OPTARG" ;;
+  o)	out="$OPTARG" ;;
+  *)	help=1 ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+
+# files
+in="$1"
+[ -z "$out" ] && out=$(echo "$1" | sed -e 's/\.[^.]*$/.mp4/')
+tmp="$out.tmp"
+
+if [ "$help" = 1 -o ! -f "$in" ]
+then
+  cat <<EOF
+usage: `basename $0` [-1] file
+  -1 	faster 1-pass encoding
+  -s 	streamable output
+  -r 	target bitrate per megapixel (default: ${rate}k)
+  -m 	target bitrate cap (default: ${rate_cap}k)
+  -w 	maximum width (default: $vmax_width)
+  -w 	maximum height (default: $vmax_height)
+  -f 	maximum fps (default: $vmax_fps)
+  -o 	set output file (default to same base with .mp4 extension)
+EOF
+  exit 1
+fi
+
+# probe input file
+iv_wh=$(exiftool -s -t "$in" | sed -ne 's/^ImageSize\t//p')
+iv_fps=$(exiftool -s -t "$in" | sed -ne 's/^VideoFrameRate\t//p')
+iv_width=$(echo "$iv_wh" | cut -dx -f1)
+iv_height=$(echo "$iv_wh" | cut -dx -f2)
+
+# avconv flags
+flags="-f mp4"
+[ $stream = 1 ] && flags="$flags -movflags frag_keyframe"
+[ $verbose = 0 ] && flags="$flags -loglevel warning"
+
+# proportional target birate
+trate=$(($iv_width * $iv_height * $rate / 1000000))
+[ $trate -gt $rate_cap ] && trate=$rate_cap
+[ $verbose = 1 ] && echo "`basename $0`: total data rate: ${trate}k"
+
+# proportional a/v rates
+arate=$(($trate * $arate_rt / 100))
+[ $arate -gt $arate_cap ] && arate=$arate_cap
+vrate=$(($trate - $arate))
+
+if [ $arate -lt 1 -o $vrate -lt 1 ]
+then
+  echo "`basename $0`: calculated bitrates are too low (a: ${arate}k, v: ${vrate}k)" >&2
+  exit 1
+fi
+
+flags="$flags -b:a ${arate}k -b:v ${vrate}k"
+[ $verbose = 1 ] && echo "`basename $0`: calculated audio rate: ${arate}k, video rate: ${vrate}k"
+
+# scaling filter
+if [ $iv_width -gt $vmax_width -o $iv_height -gt $vmax_height ]
+then
+  iv_rt=$(($iv_width * 1000 / $iv_height + 1000))
+  vmax_rt=$(($vmax_width * 1000 / $vmax_height + 1000))
+  if [ $vmax_rt -lt $iv_rt ]
+  then
+    flags="$flags -vf \"scale='min($vmax_width,iw):-1'\""
+  else
+    flags="$flags -vf \"scale='-1:min($vmax_height,ih)'\""
+  fi
+fi
+
+# limit frame rate
+if [ $(printf %.0f $iv_fps) -gt $(printf %.0f $vmax_fps) ]
+then
+  flags="$flags -r $vmax_fps"
+fi
+
+# actual conversion
+if [ $npass = 1 ]
+then
+  eval $avconv -i \"\$in\" $flags \"\$out\"
+  status=$?
+else
+  eval $avconv -i \"\$in\" $flags -pass 1 -an -passlogfile \"\$tmp\" -y /dev/null
+  [ $? = 0 ] || exit $?
+  eval $avconv -i \"\$in\" $flags -pass 2 -passlogfile \"\$tmp\" \"\$out\"
+  status=$?
+  rm -f $tmp*
+fi
+exit $status

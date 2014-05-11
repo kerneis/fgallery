@@ -465,31 +465,8 @@ sub process_img
   # convert video to mpeg and webm formats (2 passes)
   if ($props{video})
   {
-  my @margs = (@ffmpegcmd, '-i', $file,
-  '-codec:v', 'libx264', '-profile:v', 'main', '-preset', 'slow',
-  '-b:v', $bitrate . "k", '-maxrate', $bitrate . "k",
-  '-bufsize', $bufsize . "k",
-  '-passlogfile', "/tmp/ffmpeg2pass-$root",
-  '-vf', "scale='trunc(oh*a/2)*2:min($maxvideoheight\\,ih)'", 
-  '-pix_fmt', 'yuv420p');
-  
-  sys(@margs, '-pass', '1', '-an', '-f', 'mp4', '-y', '/dev/null');
-  sys(@margs, '-movflags', '+faststart', '-pass', '2',
-    '-codec:a', $libaac, '-b:a', '128k', '-f', 'mp4', "$out/imgs/$root.mp4");
-  sys("rm -f /tmp/ffmpeg2pass-$root-*.log*");
-
-  my @wargs = (@ffmpegcmd, '-i', $file,
-  '-codec:v', 'libvpx', '-quality', 'good', '-cpu-used', '0',
-  '-b:v', $bitrate . "k", '-qmin', '10', '-qmax', '42',
-  '-maxrate', $bitrate . "k", '-bufsize', $bufsize . "k",
-  '-passlogfile', "/tmp/ffmpeg2pass-$root",
-  '-vf', "scale='trunc(oh*a/2)*2:min($maxvideoheight\\,ih)'",
-  '-pix_fmt', 'yuv420p');
-
-  sys(@wargs, '-pass', '1', '-an', '-f', 'webm', '-y', '/dev/null');
-  sys(@wargs, '-movflags', '+faststart', '-pass', '2',
-    '-codec:a', 'libvorbis', '-q:a', '3', '-f', 'webm', "$out/imgs/$root.webm");
-  sys("rm -f /tmp/ffmpeg2pass-$root-*.log*");
+  sys('avtomp4', '-o', "$out/imgs/$root.mp4", $file);
+  sys('avtomp4', '-o', "$out/imgs/$root.webm", $file);
   }
 
   # avoid conversion to string
